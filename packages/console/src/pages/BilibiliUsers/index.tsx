@@ -1,7 +1,8 @@
 import { useGSAP } from '@gsap/react';
 import { conditional } from '@silverhand/essentials';
 import { gsap } from 'gsap';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 
@@ -17,7 +18,7 @@ import Search from '@/ds-components/Search';
 import Table from '@/ds-components/Table';
 import TablePlaceholder from '@/ds-components/Table/TablePlaceholder';
 import Tag, { type Props as TagProps } from '@/ds-components/Tag';
-import type { RequestError } from '@/hooks/use-api';
+import useApi, { type RequestError } from '@/hooks/use-api';
 import useSearchParametersWatcher from '@/hooks/use-search-parameters-watcher';
 import useTenantPathname from '@/hooks/use-tenant-pathname';
 import pageLayout from '@/scss/page-layout.module.scss';
@@ -66,7 +67,9 @@ function BilibiliAvatar({
 function BilibiliUsers() {
   const { t } = useTranslation(undefined, { keyPrefix: 'admin_console' });
   const { navigate } = useTenantPathname();
+  const api = useApi();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isCheckingCookie, setIsCheckingCookie] = useState(false);
 
   const [{ page, keyword }, updateSearchParameters] = useSearchParametersWatcher({
     page: 1,
@@ -99,11 +102,36 @@ function BilibiliUsers() {
     { scope: containerRef }
   );
 
+  const checkCookie = async () => {
+    setIsCheckingCookie(true);
+    try {
+      const result = await api
+        .get('api/bilibili-identities/cookie-status')
+        .json<{ configured: boolean; valid: boolean; uname?: string }>();
+
+      if (!result.configured) {
+        toast.error(t('bilibili_users.cookie_not_configured'));
+      } else if (result.valid) {
+        toast.success(t('bilibili_users.cookie_valid', { uname: result.uname ?? '' }));
+      } else {
+        toast.error(t('bilibili_users.cookie_invalid'));
+      }
+    } finally {
+      setIsCheckingCookie(false);
+    }
+  };
+
   return (
     <div ref={containerRef} className={pageLayout.container}>
       <PageMeta titleKey="bilibili_users.page_title" />
       <div data-reveal className={pageLayout.headline}>
         <CardTitle title="bilibili_users.title" subtitle="bilibili_users.subtitle" />
+        <Button
+          type="outline"
+          title="bilibili_users.check_cookie"
+          isLoading={isCheckingCookie}
+          onClick={checkCookie}
+        />
       </div>
       <div data-reveal className={styles.tableWrapper}>
         <Table

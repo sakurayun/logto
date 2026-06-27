@@ -7,6 +7,7 @@ export const featuredConnectorTargets = [
   'discord',
   'wechat',
   'alipay',
+  'bilibili',
   'kakao',
   'naver',
   'azuread',

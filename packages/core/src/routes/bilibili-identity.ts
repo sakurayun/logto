@@ -22,6 +22,48 @@ import { type ManagementApiRouter, type RouterInitArgs } from './types.js';
 
 const bilibiliTarget = 'bilibili';
 
+/** The connector config fields relevant to the live `search_user` (uid) lookup. */
+const cookieConfigGuard = z.object({
+  searchCookie: z.string().optional(),
+  searchUserAgent: z.string().optional(),
+});
+
+/** Subset of the Bilibili `nav` response used to tell whether the cookie is logged in. */
+const navResponseGuard = z.object({
+  code: z.number(),
+  data: z
+    .object({
+      isLogin: z.boolean().optional(),
+      uname: z.string().optional(),
+      mid: z.number().optional(),
+    })
+    .optional(),
+});
+
+const bilibiliNavEndpoint = 'https://api.bilibili.com/x/web-interface/nav';
+
+/** Check whether a Bilibili cookie is still valid (logged in) via the public `nav` endpoint. */
+const checkBilibiliCookie = async (
+  cookie: string,
+  userAgent: string
+): Promise<{ valid: boolean; uname?: string; mid?: number }> => {
+  try {
+    const response = await fetch(bilibiliNavEndpoint, {
+      headers: { Cookie: cookie, 'User-Agent': userAgent },
+      signal: AbortSignal.timeout(8000),
+    });
+    const parsed = navResponseGuard.safeParse(await response.json());
+
+    if (parsed.success && parsed.data.code === 0 && parsed.data.data?.isLogin) {
+      return { valid: true, uname: parsed.data.data.uname, mid: parsed.data.data.mid };
+    }
+
+    return { valid: false };
+  } catch {
+    return { valid: false };
+  }
+};
+
 /** Response shape: omit the encrypted token blob, expose only whether a token is stored. */
 const bilibiliIdentityResponseGuard = BilibiliSocialIdentities.guard
   .omit({ tenantId: true, encryptedTokenSet: true })
@@ -43,10 +85,12 @@ const desensitize = (row: BilibiliSocialIdentity): BilibiliIdentityResponse => {
 };
 
 export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
-  ...[router, { queries, libraries }]: RouterInitArgs<T>
+  ...[router, tenant]: RouterInitArgs<T>
 ) {
+  const { queries, libraries } = tenant;
   const { bilibiliSocialIdentities, secrets } = queries;
   const { socials } = libraries;
+  const { getLogtoConnectors } = tenant.connectors;
 
   router.get(
     '/bilibili-identities',
@@ -67,6 +111,40 @@ export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
 
       ctx.pagination.totalCount = totalCount;
       ctx.body = rows.map((row) => desensitize(row));
+
+      return next();
+    }
+  );
+
+  // Check whether the configured Bilibili connector cookie (used for the uid lookup) is still valid.
+  // Registered before `/:userId` so the literal path is not captured by the param route.
+  router.get(
+    '/bilibili-identities/cookie-status',
+    koaGuard({
+      response: z.object({
+        configured: z.boolean(),
+        valid: z.boolean(),
+        uname: z.string().optional(),
+        mid: z.number().optional(),
+      }),
+      status: [200],
+    }),
+    async (ctx, next) => {
+      const logtoConnectors = await getLogtoConnectors();
+      const biliConnector = logtoConnectors.find(
+        ({ metadata }) => metadata.target === bilibiliTarget
+      );
+      const parsedConfig = cookieConfigGuard.safeParse(biliConnector?.dbEntry.config ?? {});
+      const cookie = parsedConfig.success ? parsedConfig.data.searchCookie : undefined;
+      const userAgent =
+        (parsedConfig.success ? parsedConfig.data.searchUserAgent : undefined) ?? 'Mozilla/5.0';
+
+      if (!cookie) {
+        ctx.body = { configured: false, valid: false };
+        return next();
+      }
+
+      ctx.body = { configured: true, ...(await checkBilibiliCookie(cookie, userAgent)) };
 
       return next();
     }

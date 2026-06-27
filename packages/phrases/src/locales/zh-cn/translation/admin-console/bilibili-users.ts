@@ -21,6 +21,11 @@ const bilibili_users = {
   placeholder_title: '暂无 B站用户',
   placeholder_description: '通过 B站连接器登录的用户会显示在此处，其资料与令牌会在每次登录时刷新。',
   go_to_connectors: '配置 B站连接器',
+  /** Cookie 有效性检测 */
+  check_cookie: '检测 Cookie',
+  cookie_valid: 'B站 Cookie 有效（已登录：{{uname}}）',
+  cookie_invalid: 'B站 Cookie 无效或已过期',
+  cookie_not_configured: 'B站连接器尚未配置 Cookie',
   /** 详情页 */
   details_page_title: 'B站用户详情',
   identity_card_title: 'B站身份',

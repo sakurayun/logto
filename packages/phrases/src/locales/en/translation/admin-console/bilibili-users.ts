@@ -22,6 +22,11 @@ const bilibili_users = {
   placeholder_description:
     'Users who sign in with the Bilibili connector will appear here, with their profile and tokens refreshed on every login.',
   go_to_connectors: 'Configure Bilibili connector',
+  /** Cookie validity check */
+  check_cookie: 'Check cookie',
+  cookie_valid: 'Bilibili cookie is valid (logged in as {{uname}})',
+  cookie_invalid: 'Bilibili cookie is invalid or expired',
+  cookie_not_configured: 'No cookie is configured on the Bilibili connector yet',
   /** Details page */
   details_page_title: 'Bilibili user details',
   identity_card_title: 'Bilibili identity',
