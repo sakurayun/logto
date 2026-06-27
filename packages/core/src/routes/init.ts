@@ -27,6 +27,7 @@ import applicationUserConsentOrganizationRoutes from './applications/application
 import applicationUserConsentScopeRoutes from './applications/application-user-consent-scope.js';
 import applicationRoutes from './applications/application.js';
 import authnRoutes from './authn.js';
+import bilibiliIdentityRoutes from './bilibili-identity.js';
 import captchaProviderRoutes from './captcha-provider/index.js';
 import connectorRoutes from './connector/index.js';
 import customPhraseRoutes from './custom-phrase.js';
@@ -117,6 +118,7 @@ const createRouters = (tenant: TenantContext) => {
   sentinelActivitiesRoutes(managementRouter, tenant);
   customProfileFieldsRoutes(managementRouter, tenant);
   secretsRoutes(managementRouter, tenant);
+  bilibiliIdentityRoutes(managementRouter, tenant);
 
   // General anonymous router for publicly accessible APIs
   const anonymousRouter: AnonymousRouter = new Router();

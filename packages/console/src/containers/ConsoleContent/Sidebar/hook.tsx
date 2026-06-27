@@ -3,6 +3,7 @@ import type { TFuncKey } from 'i18next';
 import type { FC, ReactNode } from 'react';
 
 import BarGraph from '@/assets/icons/bar-graph.svg?react';
+import Bilibili from '@/assets/icons/bilibili.svg?react';
 import Bolt from '@/assets/icons/bolt.svg?react';
 import Box from '@/assets/icons/box.svg?react';
 import Code from '@/assets/icons/code.svg?react';
@@ -123,6 +124,11 @@ export const useSidebarMenuItems = (): {
         {
           Icon: UserProfile,
           title: 'users',
+        },
+        {
+          Icon: Bilibili,
+          title: 'bilibili_users',
+          path: 'bilibili-users',
         },
       ],
     },

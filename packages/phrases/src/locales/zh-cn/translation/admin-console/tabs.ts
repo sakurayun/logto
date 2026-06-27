@@ -11,6 +11,7 @@ const tabs = {
   webhooks: 'Webhooks',
   organizations: '组织',
   users: '用户管理',
+  bilibili_users: 'B站用户',
   audit_logs: '审计日志',
   roles: '角色',
   docs: '文档',

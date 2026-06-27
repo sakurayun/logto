@@ -35,6 +35,7 @@ import {
 } from './helpers.js';
 import { AdaptiveMfaValidator } from './libraries/adaptive-mfa-validator/index.js';
 import { type AdaptiveMfaResult } from './libraries/adaptive-mfa-validator/types.js';
+import { upsertBilibiliIdentityFromProfile } from './libraries/bilibili-identity.js';
 import { CaptchaValidator } from './libraries/captcha-validator.js';
 import { MfaValidator } from './libraries/mfa-validator.js';
 import { ProvisionLibrary } from './libraries/provision-library.js';
@@ -611,6 +612,15 @@ export default class ExperienceInteraction {
         }
       );
     }
+
+    // Persist the Bilibili-specific identity (uid/openid/face/scopes + encrypted tokens) for the
+    // admin console. Refreshed on every login. Never breaks the normal flow.
+    await upsertBilibiliIdentityFromProfile(
+      this.tenant.queries,
+      user.id,
+      this.profile.data,
+      this.ctx
+    );
 
     // Sync enterprise sso token set secret
     if (enterpriseSsoConnectorTokenSetSecret) {

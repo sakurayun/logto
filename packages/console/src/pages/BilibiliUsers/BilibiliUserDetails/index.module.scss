@@ -1,0 +1,73 @@
+@use '@/scss/underscore' as _;
+
+.headerAvatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--color-layer-2);
+  box-shadow: inset 0 0 0 1px var(--color-divider);
+}
+
+.headerAvatarFallback {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--font-title-2);
+  color: var(--color-text-secondary);
+  background: var(--color-layer-2);
+  box-shadow: inset 0 0 0 1px var(--color-divider);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: _.unit(4);
+}
+
+.scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: _.unit(1.5);
+}
+
+.scopeTag {
+  padding: _.unit(0.5) _.unit(2);
+  border-radius: 6px;
+  font: var(--font-body-3);
+  color: var(--color-text-secondary);
+  background: var(--color-layer-2);
+  box-shadow: inset 0 0 0 1px var(--color-divider);
+  white-space: nowrap;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: _.unit(2);
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.placeholderText {
+  color: var(--color-text-secondary);
+}
+
+.revealRow {
+  display: flex;
+  align-items: center;
+  gap: _.unit(3);
+}
+
+.maskedToken {
+  font-family: monospace;
+  letter-spacing: 2px;
+  color: var(--color-text-secondary);
+  user-select: none;
+}

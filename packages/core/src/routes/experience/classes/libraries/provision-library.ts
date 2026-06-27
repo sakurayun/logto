@@ -35,6 +35,7 @@ import {
 } from '../../types.js';
 import { toUserSocialIdentityData } from '../utils.js';
 
+import { upsertBilibiliIdentityFromProfile } from './bilibili-identity.js';
 import {
   assertEnterpriseSsoIdentityAvailable,
   getProfileIdentifierCollisionPayload,
@@ -191,6 +192,10 @@ export class ProvisionLibrary {
         this.ctx
       );
     }
+
+    // Persist the Bilibili-specific identity (uid/openid/face/scopes + encrypted tokens) for the
+    // admin console. Refreshed on every login. Never breaks the normal flow.
+    await upsertBilibiliIdentityFromProfile(this.tenantContext.queries, user.id, profile, this.ctx);
 
     await this.provisionNewUserJitOrganizations(user.id, profile);
 

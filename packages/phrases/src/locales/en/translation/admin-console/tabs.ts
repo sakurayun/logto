@@ -11,6 +11,7 @@ const tabs = {
   inline_hooks: 'Inline hooks',
   organizations: 'Organizations',
   users: 'User management',
+  bilibili_users: 'Bilibili users',
   audit_logs: 'Audit logs',
   roles: 'Roles',
   docs: 'Docs',

@@ -9,6 +9,7 @@ import NotFound from '@/pages/NotFound';
 import { apiResources } from './routes/api-resources';
 import { applications } from './routes/applications';
 import { auditLogs } from './routes/audit-logs';
+import { bilibiliUsers } from './routes/bilibili';
 import { connectors } from './routes/connectors';
 import { customizeJwt } from './routes/customize-jwt';
 import { enterpriseSso } from './routes/enterprise-sso';
@@ -46,6 +47,7 @@ export const useConsoleRoutes = () => {
         webhooks,
         ...(isDevFeaturesEnabled ? [inlineHooks] : []),
         users,
+        bilibiliUsers,
         auditLogs,
         roles,
         organizationTemplate,
