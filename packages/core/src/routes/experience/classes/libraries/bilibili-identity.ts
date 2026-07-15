@@ -1,4 +1,5 @@
 import { appInsights } from '@logto/app-insights/node';
+import { type SocialUserInfo } from '@logto/connector-kit';
 import { trySafe } from '@silverhand/essentials';
 import { z } from 'zod';
 
@@ -9,7 +10,6 @@ import { type InteractionProfile, type WithHooksAndLogsContext } from '../../typ
 
 const bilibiliTarget = 'bilibili';
 
-type SocialIdentity = NonNullable<InteractionProfile['socialIdentity']>;
 type SocialConnectorTokenSetSecret = NonNullable<
   InteractionProfile['socialConnectorTokenSetSecret']
 >;
@@ -25,18 +25,40 @@ const bilibiliRawDataGuard = z
   })
   .partial();
 
+/** The stored social identity `details` are the connector's `SocialUserInfo` serialized as JSON. */
+const storedUserInfoGuard = z.object({
+  id: z.string(),
+  name: z.string().nullish(),
+  avatar: z.string().nullish(),
+  rawData: z.unknown().optional(),
+});
+
+type BilibiliUserInfoLike = z.infer<typeof storedUserInfoGuard>;
+
 /**
- * Build the row to persist. Identity attributes (openid/uid/name/face) always come from the
- * connector user info; the token columns are only included when a token set secret is present
- * (token storage enabled), so a token-less login neither wipes a previously stored token nor
- * blocks the identity from being recorded.
+ * On a plain sign-in the interaction profile carries the token set secret but NOT the fresh social
+ * identity (Logto only attaches it when registering or linking). Fall back to the Bilibili identity
+ * already stored on the user so the `bilibili_social_identities` row is still refreshed.
+ */
+const getStoredBilibiliUserInfo = async (
+  queries: Queries,
+  userId: string
+): Promise<BilibiliUserInfoLike | undefined> => {
+  const user = await queries.users.findUserById(userId);
+  const parsed = storedUserInfoGuard.safeParse(user.identities[bilibiliTarget]?.details);
+  return parsed.success ? parsed.data : undefined;
+};
+
+/**
+ * Build the row to persist. Identity attributes always come from the (fresh or stored) user info;
+ * the token columns are only included when a token set secret is present (token storage enabled),
+ * so a token-less login records the profile without wiping a previously stored token.
  */
 const toBilibiliUpsertData = (
-  socialIdentity: SocialIdentity,
+  userInfo: BilibiliUserInfoLike | SocialUserInfo,
   connectorId: string,
   tokenSetSecret?: SocialConnectorTokenSetSecret
 ) => {
-  const { userInfo } = socialIdentity;
   const parsed = bilibiliRawDataGuard.safeParse(userInfo.rawData ?? {});
   const rawData = parsed.success ? parsed.data : {};
 
@@ -57,13 +79,15 @@ const toBilibiliUpsertData = (
 
 /**
  * Persist (and refresh on every login) the Bilibili identity for a Logto user into the dedicated
- * `bilibili_social_identities` table so it always shows up in the admin console — independent of
- * whether social token storage is enabled.
+ * `bilibili_social_identities` table so it always shows up in the admin console — for register,
+ * link, and plain sign-in alike, and regardless of whether social token storage is enabled.
  *
- * - Runs for the `bilibili` social target. The connector instance id comes from the token set
- *   secret when token storage is on, otherwise from the social identity itself.
- * - Token columns are only written when a token set secret is present; a token-less login keeps
- *   any previously stored token intact.
+ * - A Bilibili interaction is detected either from the fresh social identity (register / link) or
+ *   from the token set secret's relation payload (plain sign-in).
+ * - The user info comes from the fresh social identity when present, otherwise from the Bilibili
+ *   identity already stored on the user.
+ * - The connector instance id comes from the token set secret when token storage is on, otherwise
+ *   from the social identity. Token columns are written only when a token set secret is present.
  * - Never throws: a failure here must not break the social authentication / link flow.
  */
 export const upsertBilibiliIdentityFromProfile = async (
@@ -74,7 +98,11 @@ export const upsertBilibiliIdentityFromProfile = async (
 ): Promise<void> => {
   const { socialIdentity, socialConnectorTokenSetSecret } = profile;
 
-  if (socialIdentity?.target !== bilibiliTarget) {
+  const isBilibili =
+    socialIdentity?.target === bilibiliTarget ||
+    socialConnectorTokenSetSecret?.socialConnectorRelationPayload.target === bilibiliTarget;
+
+  if (!isBilibili) {
     return;
   }
 
@@ -83,18 +111,26 @@ export const upsertBilibiliIdentityFromProfile = async (
   // the NOT NULL `connector_id` column, so skip.
   const connectorId =
     socialConnectorTokenSetSecret?.socialConnectorRelationPayload.connectorId ??
-    socialIdentity.connectorId;
+    socialIdentity?.connectorId;
 
   if (!connectorId) {
     return;
   }
 
   await trySafe(
-    async () =>
-      queries.bilibiliSocialIdentities.upsertByUserId(
+    async () => {
+      const userInfo =
+        socialIdentity?.userInfo ?? (await getStoredBilibiliUserInfo(queries, userId));
+
+      if (!userInfo) {
+        return;
+      }
+
+      await queries.bilibiliSocialIdentities.upsertByUserId(
         userId,
-        toBilibiliUpsertData(socialIdentity, connectorId, socialConnectorTokenSetSecret)
-      ),
+        toBilibiliUpsertData(userInfo, connectorId, socialConnectorTokenSetSecret)
+      );
+    },
     (error) => {
       void appInsights.trackException(error, buildAppInsightsTelemetry(ctx));
     }
