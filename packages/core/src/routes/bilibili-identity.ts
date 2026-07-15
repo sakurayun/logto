@@ -11,6 +11,11 @@ import koaGuard from '#src/middleware/koa-guard.js';
 import koaPagination from '#src/middleware/koa-pagination.js';
 import assertThat from '#src/utils/assert-that.js';
 import {
+  mask,
+  recordBilibiliApiCall,
+  registerBilibiliAuditSink,
+} from '#src/utils/bilibili-audit.js';
+import {
   decryptTokens,
   deserializeEncryptedSecret,
   encryptTokenResponse,
@@ -52,14 +57,32 @@ const checkBilibiliCookie = async (
       headers: { Cookie: cookie, 'User-Agent': userAgent },
       signal: AbortSignal.timeout(8000),
     });
-    const parsed = navResponseGuard.safeParse(await response.json());
+    const json: unknown = await response.json();
+    recordBilibiliApiCall({
+      phase: 'checkCookie',
+      method: 'GET',
+      url: bilibiliNavEndpoint,
+      requestHeaders: { Cookie: mask(cookie), 'User-Agent': userAgent },
+      status: response.status,
+      ok: response.ok,
+      responseBody: JSON.stringify(json).slice(0, 4000),
+    });
+    const parsed = navResponseGuard.safeParse(json);
 
     if (parsed.success && parsed.data.code === 0 && parsed.data.data?.isLogin) {
       return { valid: true, uname: parsed.data.data.uname, mid: parsed.data.data.mid };
     }
 
     return { valid: false };
-  } catch {
+  } catch (error) {
+    recordBilibiliApiCall({
+      phase: 'checkCookie',
+      method: 'GET',
+      url: bilibiliNavEndpoint,
+      requestHeaders: { Cookie: mask(cookie), 'User-Agent': userAgent },
+      ok: false,
+      error: String(error),
+    });
     return { valid: false };
   }
 };
@@ -91,6 +114,11 @@ export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
   const { bilibiliSocialIdentities, secrets } = queries;
   const { socials } = libraries;
   const { getLogtoConnectors } = tenant.connectors;
+
+  // Bridge Bilibili connector + route HTTP calls into the audit log (logs table, key `Bilibili.Api`).
+  if (tenant.id === 'default') {
+    registerBilibiliAuditSink(queries.logs.insertLog);
+  }
 
   router.get(
     '/bilibili-identities',
@@ -141,12 +169,10 @@ export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
 
       if (!cookie) {
         ctx.body = { configured: false, valid: false };
-        return next();
+        return;
       }
 
       ctx.body = { configured: true, ...(await checkBilibiliCookie(cookie, userAgent)) };
-
-      return next();
     }
   );
 

@@ -18,8 +18,9 @@ import type {
   SocialUserInfo,
   TokenResponse,
 } from '@logto/connector-kit';
-import ky, { HTTPError } from 'ky';
+import { HTTPError } from 'ky';
 
+import { auditedKy } from './audit.js';
 import {
   authorizationEndpoint,
   accessTokenEndpoint,
@@ -118,7 +119,7 @@ const buildSignedHeaders = (
 };
 
 export const getAccessToken = async (config: BilibiliConfig, code: string) => {
-  const httpResponse = await ky
+  const httpResponse = await auditedKy
     .post(accessTokenEndpoint, {
       searchParams: {
         client_id: config.clientId,
@@ -152,7 +153,7 @@ const getBilibiliUserInfo = async (config: BilibiliConfig, accessToken: string) 
   const headers = buildSignedHeaders(config.clientId, config.clientSecret, accessToken);
 
   try {
-    const httpResponse = await ky
+    const httpResponse = await auditedKy
       .get(userInfoEndpoint, { headers, timeout: defaultTimeout })
       .json();
 
@@ -196,7 +197,7 @@ const searchUid = async (config: BilibiliConfig, name: string): Promise<string |
   }
 
   try {
-    const httpResponse = await ky
+    const httpResponse = await auditedKy
       .get(searchUserEndpoint, {
         searchParams: { search: name },
         headers: {
@@ -302,7 +303,7 @@ const getAccessTokenByRefreshToken =
     validateConfig(config, bilibiliConfigGuard);
 
     try {
-      const httpResponse = await ky
+      const httpResponse = await auditedKy
         .post(refreshTokenEndpoint, {
           searchParams: {
             client_id: config.clientId,
