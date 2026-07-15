@@ -238,6 +238,10 @@ const buildSocialUserInfo = async (
     id: openid,
     name,
     avatar: face,
+    // Bilibili's open platform never returns an email. Synthesize a stable, unique address from
+    // the openid so a first-time Bilibili user is provisioned with a primary email in Logto. Only
+    // new users adopt it (Logto syncs the social email on creation, not on subsequent logins).
+    email: `${openid}@oauth2.bilibili.com`,
     // Omit `undefined` values: JSON (jsonGuard) only accepts defined/null values.
     rawData: jsonGuard.parse({
       openid,
