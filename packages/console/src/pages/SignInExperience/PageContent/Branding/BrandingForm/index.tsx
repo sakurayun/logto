@@ -24,13 +24,12 @@ function BrandingForm() {
   const {
     watch,
     register,
-    unregister,
     setValue,
     control,
     formState: { errors, isDirty },
   } = useFormContext<SignInExperienceForm>();
   const { currentSubscriptionQuota } = useContext(SubscriptionDataContext);
-  const isHideLogtoBrandingEnabled = currentSubscriptionQuota.bringYourUiEnabled;
+  const isHideLogtoBrandingEnabled = !isCloud || currentSubscriptionQuota.bringYourUiEnabled;
 
   const isDarkModeEnabled = watch('color.isDarkModeEnabled');
   const primaryColor = watch('color.primaryColor');
@@ -54,12 +53,6 @@ function BrandingForm() {
       handleResetColor();
     }
   }, [handleResetColor, isDarkModeEnabled, isDirty]);
-
-  useEffect(() => {
-    if (!isCloud) {
-      unregister('hideLogtoBranding');
-    }
-  }, [unregister]);
 
   return (
     <Card>
@@ -125,10 +118,7 @@ function BrandingForm() {
           />
         </>
       )}
-      <HideLogtoBrandingField
-        variant={isCloud ? 'cloud' : 'oss'}
-        isEnabledInCloud={isHideLogtoBrandingEnabled}
-      />
+      <HideLogtoBrandingField variant="cloud" isEnabledInCloud={isHideLogtoBrandingEnabled} />
     </Card>
   );
 }

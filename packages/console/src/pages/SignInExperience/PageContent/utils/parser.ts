@@ -237,7 +237,7 @@ export const sieFormDataParser = {
           customUiCsp: normalizeCustomUiCspForSubmit(customUiCsp),
         }
       ),
-      ...conditional(isCloud && { hideLogtoBranding }),
+      hideLogtoBranding,
     };
   },
 };
@@ -300,6 +300,6 @@ export const signInExperienceToUpdatedDataParser = (
         customUiCsp: normalizeCustomUiCspForSubmit(normalizeCustomUiCspForForm(customUiCsp)),
       }
     ),
-    ...conditional(isCloud && { hideLogtoBranding }),
+    hideLogtoBranding,
   };
 };
