@@ -20,7 +20,7 @@ const { table, fields } = convertToIdentifiers(BilibiliSocialIdentities);
  */
 type UpsertableData = Pick<
   CreateBilibiliSocialIdentity,
-  'connectorId' | 'openid' | 'uid' | 'name' | 'face' | 'tokenExpiresAt'
+  'connectorId' | 'openid' | 'uid' | 'name' | 'face' | 'tokenExpiry'
 > &
   Partial<Pick<CreateBilibiliSocialIdentity, 'scopes' | 'hasRefreshToken' | 'encryptedTokenSet'>>;
 
@@ -84,7 +84,7 @@ export default class BilibiliSocialIdentityQueries extends SchemaQueries<
       update ${table}
       set ${fields.encryptedTokenSet} = null,
         ${fields.hasRefreshToken} = false,
-        ${fields.tokenExpiresAt} = null
+        ${fields.tokenExpiry} = null
       where ${fields.userId} = ${userId}
     `);
   }

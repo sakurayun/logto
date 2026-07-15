@@ -16,7 +16,7 @@ type SocialConnectorTokenSetSecret = NonNullable<
 
 /**
  * The extra Bilibili fields the connector packs into `SocialUserInfo.rawData`.
- * `biliExpiresIn` is the absolute UTC timestamp returned by Bilibili.
+ * `biliExpiresIn` is the absolute UTC unix timestamp (seconds) at which the token expires.
  */
 const bilibiliRawDataGuard = z
   .object({
@@ -68,7 +68,9 @@ const toBilibiliUpsertData = (
     uid: rawData.uid ?? null,
     name: userInfo.name ?? null,
     face: userInfo.avatar ?? null,
-    tokenExpiresAt: rawData.biliExpiresIn ?? null,
+    // Unix seconds; the column is deliberately NOT named `*_at` so Logto's SQL builder does not
+    // coerce this number into a `timestamptz` (see `convertToPrimitiveOrSql`).
+    tokenExpiry: rawData.biliExpiresIn ?? null,
     ...(tokenSetSecret && {
       scopes: tokenSetSecret.encryptedTokenSet.metadata.scope ?? null,
       hasRefreshToken: tokenSetSecret.encryptedTokenSet.metadata.hasRefreshToken,

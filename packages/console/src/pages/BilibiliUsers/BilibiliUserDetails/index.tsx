@@ -234,7 +234,7 @@ function BilibiliUserDetails() {
             </FormField>
             <FormField title="bilibili_users.expires_at">
               <div className={styles.mono}>
-                {data.tokenExpiresAt ? <LocaleDate>{data.tokenExpiresAt * 1000}</LocaleDate> : '-'}
+                {data.tokenExpiry ? <LocaleDate>{data.tokenExpiry * 1000}</LocaleDate> : '-'}
               </div>
             </FormField>
             {data.hasToken &&

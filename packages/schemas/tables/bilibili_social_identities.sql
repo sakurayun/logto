@@ -20,8 +20,8 @@ create table bilibili_social_identities (
   face varchar(2048),
   /** Space-joined authorized scopes, e.g. 'USER_INFO ATC_BASE'. */
   scopes varchar(512),
-  /** Absolute UTC unix timestamp (seconds) when the access token expires, as returned by Bilibili. */
-  token_expires_at bigint,
+  /** Absolute UTC unix timestamp (seconds) when the access token expires. Deliberately not named with an _at suffix so the SQL builder keeps it a bigint instead of coercing it to a timestamp. */
+  token_expiry bigint,
   /** Whether a refresh token is stored. */
   has_refresh_token boolean not null default false,
   /** Base64-serialized encrypted token set ({ access_token, refresh_token }). */

@@ -10,7 +10,7 @@ export type BilibiliIdentity = {
   /** Space-joined scopes, e.g. 'USER_INFO ATC_BASE'. */
   scopes: string | undefined;
   /** Absolute UTC unix timestamp (seconds) when the access token expires. */
-  tokenExpiresAt: number | undefined;
+  tokenExpiry: number | undefined;
   hasRefreshToken: boolean;
   hasToken: boolean;
   createdAt: number;
@@ -27,14 +27,14 @@ export type BilibiliTokenStatus = 'active' | 'expired' | 'none';
 
 export const getBilibiliTokenStatus = (identity: {
   hasToken: boolean;
-  tokenExpiresAt: number | undefined;
+  tokenExpiry: number | undefined;
 }): BilibiliTokenStatus => {
   if (!identity.hasToken) {
     return 'none';
   }
 
-  const { tokenExpiresAt } = identity;
-  if (tokenExpiresAt && tokenExpiresAt * 1000 < Date.now()) {
+  const { tokenExpiry } = identity;
+  if (tokenExpiry && tokenExpiry * 1000 < Date.now()) {
     return 'expired';
   }
 

@@ -92,17 +92,17 @@ const bilibiliIdentityResponseGuard = BilibiliSocialIdentities.guard
   .omit({ tenantId: true, encryptedTokenSet: true })
   .extend({
     // `bigint` columns are returned as strings by the query library; coerce to number.
-    tokenExpiresAt: z.number().nullable(),
+    tokenExpiry: z.number().nullable(),
     hasToken: z.boolean(),
   });
 
 type BilibiliIdentityResponse = z.infer<typeof bilibiliIdentityResponseGuard>;
 
 const desensitize = (row: BilibiliSocialIdentity): BilibiliIdentityResponse => {
-  const { tenantId, encryptedTokenSet, tokenExpiresAt, ...rest } = row;
+  const { tenantId, encryptedTokenSet, tokenExpiry, ...rest } = row;
   return {
     ...rest,
-    tokenExpiresAt: tokenExpiresAt === null ? null : Number(tokenExpiresAt),
+    tokenExpiry: tokenExpiry === null ? null : Number(tokenExpiry),
     hasToken: Boolean(encryptedTokenSet),
   };
 };
@@ -218,7 +218,7 @@ export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
       ctx.body = {
         accessToken: tokenSet.access_token,
         refreshToken: tokenSet.refresh_token,
-        expiresAt: row.tokenExpiresAt === null ? null : Number(row.tokenExpiresAt),
+        expiresAt: row.tokenExpiry === null ? null : Number(row.tokenExpiry),
       };
 
       return next();
@@ -276,8 +276,8 @@ export default function bilibiliIdentityRoutes<T extends ManagementApiRouter>(
         name: row.name,
         face: row.face,
         scopes: metadata.scope ?? row.scopes,
-        tokenExpiresAt:
-          metadata.expiresAt ?? (row.tokenExpiresAt === null ? null : Number(row.tokenExpiresAt)),
+        tokenExpiry:
+          metadata.expiresAt ?? (row.tokenExpiry === null ? null : Number(row.tokenExpiry)),
         hasRefreshToken: metadata.hasRefreshToken,
         encryptedTokenSet: serializeEncryptedSecret(tokenSecret),
       });
