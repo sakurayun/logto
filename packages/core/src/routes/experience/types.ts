@@ -45,6 +45,11 @@ export type InteractionProfile = {
   socialIdentity?: {
     target: string;
     userInfo: SocialUserInfo;
+    /**
+     * The Logto social connector instance id. Carried so downstream provisioning (e.g. the
+     * Bilibili identity table) can record it even when social token storage is disabled.
+     */
+    connectorId?: string;
   };
   enterpriseSsoIdentity?: Pick<
     UserSsoIdentity,
@@ -115,6 +120,7 @@ const interactionProfileGuard = Users.createGuard
       .object({
         target: z.string(),
         userInfo: socialUserInfoGuard,
+        connectorId: z.string().optional(),
       })
       .optional(),
     enterpriseSsoIdentity: UserSsoIdentities.guard

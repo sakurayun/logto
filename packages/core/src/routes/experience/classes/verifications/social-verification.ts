@@ -232,6 +232,7 @@ export class SocialVerification implements IdentifierVerificationRecord<Verifica
       socialIdentity: {
         target,
         userInfo: this.socialUserInfo,
+        connectorId: this.connectorId,
       },
     };
   }

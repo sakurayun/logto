@@ -13,19 +13,16 @@ import { convertToIdentifiers, manyRows } from '#src/utils/sql.js';
 
 const { table, fields } = convertToIdentifiers(BilibiliSocialIdentities);
 
-/** Mutable columns updated on every Bilibili login. */
+/**
+ * Mutable columns updated on every Bilibili login. Identity attributes are always written; the
+ * token columns are optional so a login without token storage records the identity without
+ * clearing a previously stored token.
+ */
 type UpsertableData = Pick<
   CreateBilibiliSocialIdentity,
-  | 'connectorId'
-  | 'openid'
-  | 'uid'
-  | 'name'
-  | 'face'
-  | 'scopes'
-  | 'tokenExpiresAt'
-  | 'hasRefreshToken'
-  | 'encryptedTokenSet'
->;
+  'connectorId' | 'openid' | 'uid' | 'name' | 'face' | 'tokenExpiresAt'
+> &
+  Partial<Pick<CreateBilibiliSocialIdentity, 'scopes' | 'hasRefreshToken' | 'encryptedTokenSet'>>;
 
 export default class BilibiliSocialIdentityQueries extends SchemaQueries<
   BilibiliSocialIdentityKeys,
